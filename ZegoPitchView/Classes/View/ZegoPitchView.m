@@ -77,21 +77,8 @@ CAAnimationDelegate
 }
 
 - (void)setStandardPitchModels:(NSArray<ZegoPitchModel *> *)standardPitchModels {
+  [self reset];
   self.stdPitchModels = standardPitchModels;
-}
-
-- (void)setStandardPitchModels:(NSArray<ZegoPitchModel *> *)standardPitchModels beginTime:(NSInteger)beginTime endTime:(NSInteger)endTime {
-  NSMutableArray *models = [NSMutableArray array];
-  [standardPitchModels enumerateObjectsUsingBlock:^(ZegoPitchModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-    if (obj.begin_time > endTime) {
-      return;
-    }
-    if (obj.begin_time + obj.duration < beginTime) {
-      return;
-    }
-    [models addObject:obj];
-  }];
-  self.stdPitchModels = models.copy;
 }
 
 - (int)getPitchStartTime {

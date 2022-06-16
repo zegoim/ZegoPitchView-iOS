@@ -30,14 +30,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setStandardPitchModels:(NSArray<ZegoPitchModel *> * _Nullable)standardPitchModels;
 
 /**
- * 设置打分控件的标准音高线模型数组, 根据传入的时间区域过滤
- * @param standardPitchModels 标准音高线模型数组
- * @param beginTime 开始时间
- * @param endTime 结束时间
- */
-- (void)setStandardPitchModels:(NSArray<ZegoPitchModel *> * _Nullable)standardPitchModels beginTime:(NSInteger)beginTime endTime:(NSInteger)endTime;
-
-/**
  * 获取标准音高线的开始时间
  * 例: 在有音高线之前, 不需要显示音高线的得分情况
  * @return 音高线开始对应歌曲进度
