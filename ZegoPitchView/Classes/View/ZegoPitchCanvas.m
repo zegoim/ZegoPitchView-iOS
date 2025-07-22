@@ -15,7 +15,7 @@
 @property (nonatomic, copy) NSArray<ZegoPitchModel *> *stdPitchModelsToDraw;
 @property (nonatomic, copy) NSArray<ZegoPitchModel *> *hitPitchModelsToDraw;
 @property (nonatomic, assign) int pitch; // 10 - 90
-@property (nonatomic, assign) int progress;
+@property (nonatomic, assign) NSInteger progress;
 
 
 @property (nonatomic, assign) CGFloat msWidth;
@@ -51,7 +51,7 @@
   [self setupUIProperties];
 }
 
-- (void)drawWithProgress:(int)progress
+- (void)drawWithProgress:(NSInteger)progress
           stdPitchModels:(NSArray<ZegoPitchModel *> *)stdPitchModels
           hitPitchModels:(NSArray<ZegoPitchModel *> *)hitPitchModels
                    pitch:(int)pitch {
@@ -158,13 +158,13 @@
     if (prev) {
       if (validate) {
         if (pitchModel.begin_time > prev.begin_time + prev.duration) {
-          NSLog(@"[KTV_DEBUG_PITCH_TEST] prev_end:%d, cur_begin:%d", prev.begin_time + prev.duration, pitchModel.begin_time);
+//          NSLog(@"[KTV_DEBUG_PITCH_TEST] prev_end:%ld, cur_begin:%ld", (long)(prev.begin_time + prev.duration), (long)pitchModel.begin_time);
         }
       }
     }
     
-    int beginTime = pitchModel.begin_time;
-    int duration = pitchModel.duration;
+    NSInteger beginTime = pitchModel.begin_time;
+    NSInteger duration = pitchModel.duration;
     int pitch = pitchModel.value;
     
     CGFloat x = msWidth * (beginTime - (self.progress - self.config.timeElapsedOnScreen));

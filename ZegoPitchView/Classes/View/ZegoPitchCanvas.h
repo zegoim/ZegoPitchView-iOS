@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setConfig:(ZegoPitchViewConfig *)config;
 
-- (void)drawWithProgress:(int)progress
+- (void)drawWithProgress:(NSInteger)progress
           stdPitchModels:(NSArray<ZegoPitchModel *> *)stdPitchModels
           hitPitchModels:(NSArray<ZegoPitchModel *> *)hitPitchModels
                    pitch:(int)pitch;

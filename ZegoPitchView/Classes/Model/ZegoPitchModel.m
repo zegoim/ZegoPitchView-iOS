@@ -11,7 +11,23 @@
 @implementation ZegoPitchModel
 
 + (NSArray<ZegoPitchModel *> *)analyzePitchData:(id)json {
-  return [self analyzePitchData:json beginTime:0 endTime:NSIntegerMax krcFormatOffset:0];
+  return [self analyzePitchData:json beginTime:0 endTime:INT32_MAX krcFormatOffset:0];
+}
+
++ (NSArray<ZegoPitchModel *> *)analyzePitchData:(id)json
+                                      beginTime:(NSInteger)beginTime
+                                        endTime:(NSInteger)endTime {
+  return [self analyzePitchData:json beginTime:beginTime endTime:endTime krcFormatOffset:0];
+}
+
++ (NSArray<ZegoPitchModel *> *)analyzeAccompanimentClipPitchData:(id)json
+                                                    segmentBegin:(NSInteger)segmentBegin
+                                                      segmentEnd:(NSInteger)segmentEnd
+                                                 preludeDuration:(NSInteger)preludeDuration
+                                                 krcFormatOffset:(NSInteger)krcFormatOffset {
+  NSInteger beginTime = segmentBegin + preludeDuration - krcFormatOffset;
+  NSInteger endTime = segmentEnd - krcFormatOffset;
+  return [self analyzePitchData:json beginTime:beginTime endTime:endTime];
 }
 
 + (NSArray<ZegoPitchModel *> *)analyzePitchData:(id)json beginTime:(NSInteger)beginTime endTime:(NSInteger)endTime krcFormatOffset:(NSInteger)krcFormatOffset {

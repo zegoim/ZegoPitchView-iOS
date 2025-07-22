@@ -9,24 +9,20 @@
 #import "ZegoPitchView.h"
 #import "ZegoPitchCanvas.h"
 
-@interface ZegoPitchView ()
-<
-ZegoPitchCanvasProtocol,
-CAAnimationDelegate
->
+@interface ZegoPitchView () <ZegoPitchCanvasProtocol>
 
 /// UI
 @property (nonatomic, strong) ZegoPitchCanvas *canvas;
 @property (nonatomic, strong) CAShapeLayer *pitchIndicatorLayer;
 @property (nonatomic, assign) CGPoint pitchIndicatorOriginPosition;
-@property (nonatomic, strong) NSMutableDictionary *animationLabelMap; //用来将 label 从 superView 移除, 防止 label 生产太快导致移除错误
+@property (nonatomic, strong) NSMutableArray *animationLabels;
 @property (nonatomic, strong) UIFont *scoreLabelFont;
 
 /// Data
 @property (nonatomic, strong) ZegoPitchViewConfig *config;
 @property (nonatomic, copy, nullable) NSArray<ZegoPitchModel *> *stdPitchModels;
 @property (nonatomic, strong, nullable) NSMutableArray<ZegoPitchModel *> *hitPitchModels;
-@property (nonatomic, assign) int curProgress;
+@property (nonatomic, assign) NSInteger curProgress;
 @property (nonatomic, assign) int curSingPitch;
 @property (nonatomic, assign) BOOL hitInPeriod;
 
@@ -81,7 +77,7 @@ CAAnimationDelegate
   self.stdPitchModels = standardPitchModels;
 }
 
-- (int)getPitchStartTime {
+- (NSInteger)getPitchStartTime {
   if (!(self.stdPitchModels.count > 0)) {
     return 0;
   }
@@ -89,10 +85,20 @@ CAAnimationDelegate
   return firstPitchModel.begin_time;
 }
 
-- (void)setCurrentSongProgress:(int)progress pitch:(int)pitch {
+- (void)setCurrentSongProgress:(NSInteger)progress pitch:(int)pitch {
+  [self setAccompanimentClipCurrentSongProgress:progress pitch:pitch segBeginTime:0 krcFormatOffset:0];
+}
+
+- (void)setAccompanimentClipCurrentSongProgress:(NSInteger)progress
+                                          pitch:(int)pitch
+                                   segBeginTime:(NSInteger)segBeginTime
+                                krcFormatOffset:(NSInteger)krcFormatOffset {
+  
+  progress = progress + segBeginTime - krcFormatOffset;
+  
   self.curProgress = progress;
-  int beginTime = [self beginTimeOnViewWithProgress:progress];
-  int endTime = [self endTimeOnViewWithProgress:progress];
+  NSInteger beginTime = [self beginTimeOnViewWithProgress:progress];
+  NSInteger endTime = [self endTimeOnViewWithProgress:progress];
   
   pitch = [self validatePitch:pitch];
   _curSingPitch = pitch;
@@ -139,7 +145,10 @@ CAAnimationDelegate
   CAAnimation *anim = [self groupedAnimationMoveOnAxisYFrom:y to:10];
   [label.layer addAnimation:anim forKey:nil];
   
-  self.animationLabelMap[anim] = label;
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    [self.animationLabels addObject:label];
+    [label removeFromSuperview];
+  });
 }
 
 - (void)reset {
@@ -205,7 +214,7 @@ CAAnimationDelegate
   _canvas.delegate = self;
   [self addSubview:_canvas];
   
-  _animationLabelMap = [NSMutableDictionary dictionary];
+  _animationLabels = [NSMutableArray array];
 }
 
 /// 验证 pitch 值, 若不合法则修改
@@ -224,8 +233,8 @@ CAAnimationDelegate
 
 /// 找到当前 view 需要显示的音调数据
 - (NSArray<ZegoPitchModel *> *)filterPitchModels:(NSArray<ZegoPitchModel *> *)pitchModels
-                                betweenBeginTime:(int)beginTime
-                                         endTime:(int)endTime {
+                                betweenBeginTime:(NSInteger)beginTime
+                                         endTime:(NSInteger)endTime {
   if (!(pitchModels.count > 0)) {
     return nil;
   }
@@ -234,8 +243,8 @@ CAAnimationDelegate
   }
   NSMutableArray *ret = [NSMutableArray array];
   for (ZegoPitchModel *model in pitchModels) {
-    int begin = model.begin_time;
-    int end = begin + model.duration;
+    NSInteger begin = model.begin_time;
+    NSInteger end = begin + model.duration;
     if (begin >= endTime) {
       continue;
     }
@@ -279,7 +288,7 @@ CAAnimationDelegate
 }
 
 /// 更新当前音调, 若击中则更新击中音调数据
-- (void)updateCurrentSingPitchAndHitPitchModelsIfNeededWithProgress:(int)progress
+- (void)updateCurrentSingPitchAndHitPitchModelsIfNeededWithProgress:(NSInteger)progress
                                                               pitch:(int)pitch
                                                stdPitchModelsOnView:(NSArray<ZegoPitchModel *> *)stdPitchModelsOnView {
   if (pitch < 0 || pitch > 5) {
@@ -307,7 +316,7 @@ CAAnimationDelegate
         hit = YES;
         self.curSingPitch = stdPitch.value;
         [self updateHitPitchModelsAtProgress:progress pitch:self.curSingPitch matchedStdPitchModel:stdPitch];
-        NSLog(@"[KTV_DEBUG_PITCH]progress:%d, real pitch:%d hit count:%lu", progress, self.curSingPitch, (unsigned long)self.hitPitchModels.count);
+//        NSLog(@"[KTV_DEBUG_PITCH]progress:%ld, real pitch:%d hit count:%lu", (long)progress, self.curSingPitch, (unsigned long)self.hitPitchModels.count);
       }
       else {
         // 偏大或者偏小的情况
@@ -327,13 +336,13 @@ CAAnimationDelegate
 }
 
 /// 更新击中块数组
-- (void)updateHitPitchModelsAtProgress:(int)progress pitch:(int)pitch matchedStdPitchModel:(ZegoPitchModel *)stdPitchModel {
+- (void)updateHitPitchModelsAtProgress:(NSInteger)progress pitch:(int)pitch matchedStdPitchModel:(ZegoPitchModel *)stdPitchModel {
   
   [self removeObsoleteHitPitchModelsAtProgress:progress];
   
-  int stdBegin = stdPitchModel.begin_time;
-  int stdDuration = stdPitchModel.duration;
-  int stdEnd = stdBegin + stdDuration;
+  NSInteger stdBegin = stdPitchModel.begin_time;
+  NSInteger stdDuration = stdPitchModel.duration;
+  NSInteger stdEnd = stdBegin + stdDuration;
   
   int postTolerance = 100;
   
@@ -352,7 +361,7 @@ CAAnimationDelegate
     ZegoPitchModel *model = [[ZegoPitchModel alloc] init];
     model.begin_time = MAX(progress - self.config.estimatedCallInterval, stdBegin);
     
-    int endTime = MIN(stdEnd, progress);
+    NSInteger endTime = MIN(stdEnd, progress);
     
     model.duration = endTime - model.begin_time;
     model.value = pitch;
@@ -360,12 +369,12 @@ CAAnimationDelegate
     return;
   }
   
-  int endTime = MIN(stdEnd, progress);
+  NSInteger endTime = MIN(stdEnd, progress);
   prev.duration = endTime - prev.begin_time;
 }
 
 /// 删除不再需要绘制的
-- (void)removeObsoleteHitPitchModelsAtProgress:(int)progress {
+- (void)removeObsoleteHitPitchModelsAtProgress:(NSInteger)progress {
   __block NSUInteger lengthToRemove = 0;
   [self.hitPitchModels enumerateObjectsUsingBlock:^(ZegoPitchModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
     
@@ -380,11 +389,11 @@ CAAnimationDelegate
   [self.hitPitchModels removeObjectsInRange:rangeToRemove];
 }
 
-- (int)beginTimeOnViewWithProgress:(int)progress {
+- (NSInteger)beginTimeOnViewWithProgress:(NSInteger)progress {
   return (progress - self.config.timeElapsedOnScreen);
 }
 
-- (int)endTimeOnViewWithProgress:(int)progress {
+- (NSInteger)endTimeOnViewWithProgress:(NSInteger)progress {
   return (progress + self.config.timeToPlayOnScreen);
 }
 
@@ -397,7 +406,12 @@ CAAnimationDelegate
 
 #pragma mark - Score Label
 - (UILabel *)createAScoreLabel {
-  UILabel *scoreLabel = [[UILabel alloc] init];
+  UILabel *scoreLabel = self.animationLabels.lastObject;
+  if (scoreLabel) {
+    [self.animationLabels removeLastObject];
+  }else {
+    scoreLabel = [[UILabel alloc] init];
+  }
   scoreLabel.textColor = self.config.scoreTextColor;
   scoreLabel.font = self.scoreLabelFont;
   scoreLabel.alpha = 0;
@@ -418,7 +432,7 @@ CAAnimationDelegate
 }
 
 - (BOOL)isProgressBeforeFirstPitchModel {
-  int beginTime = [self getPitchStartTime];
+  NSInteger beginTime = [self getPitchStartTime];
   return self.curProgress < beginTime;
 }
 
@@ -441,7 +455,6 @@ CAAnimationDelegate
   CGFloat dTotal = d1 + d2 + d3 + d4 + d5;
   
   CAAnimationGroup *group = [CAAnimationGroup animation];
-  group.delegate = self;
   
   CAAnimation *anim1 = self.anim1;
   CAAnimation *anim2 = self.anim2;
@@ -533,14 +546,6 @@ CAAnimationDelegate
     _anim5 = [self disappearAnimationWithDuration:0.3];
   }
   return _anim5;
-}
-
-#pragma mark - Animation Delegate
-- (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)finish {
-  if (finish) {
-    UILabel *label = self.animationLabelMap[anim];
-    [label removeFromSuperview];
-  }
 }
 
 #pragma mark -

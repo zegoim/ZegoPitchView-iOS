@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'ZegoPitchView'
-  s.version          = '0.1.0'
+  s.version          = '0.1.1'
   s.summary          = 'To display pitch and score in KTV when singing.'
 
 # This description is used to generate tags and improve search results.

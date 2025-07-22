@@ -31,17 +31,30 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * 获取标准音高线的开始时间
- * 例: 在有音高线之前, 不需要显示音高线的得分情况
- * @return 音高线开始对应歌曲进度
+ * 示例场景: 在有音高线出现之前, 不需要展示音高线的得分
+ * @return 音高线开始对应的歌曲进度
  */
-- (int)getPitchStartTime;
+- (NSInteger)getPitchStartTime;
 
 /**
  * 设置当前歌曲播放进度及音高值, 控件会在这个方法中更新标准音高线及击中音高线的绘制
- * @param progress 歌曲播放进度
+ * @param progress 播放器进度
  * @param pitch 音高值
  */
-- (void)setCurrentSongProgress:(int)progress pitch:(int)pitch;
+- (void)setCurrentSongProgress:(NSInteger)progress pitch:(int)pitch;
+
+/**
+ * 设置当前歌曲播放进度及音高值, 控件会在这个方法中更新标准音高线及击中音高线的绘制
+ * 仅用于高潮片段资源类型
+ * @param progress 播放器进度
+ * @param pitch 音高值
+ * @param segBeginTime 高潮片段开始时间
+ * @param krcFormatOffset krc 歌词与歌曲的偏移时间量
+ */
+- (void)setAccompanimentClipCurrentSongProgress:(NSInteger)progress
+                                          pitch:(int)pitch
+                                   segBeginTime:(NSInteger)segBeginTime
+                                krcFormatOffset:(NSInteger)krcFormatOffset;
 
 /**
  * 设置唱歌分数并展示, 推荐在每句歌词唱完之后调用
